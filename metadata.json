@@ -1,0 +1,6 @@
+{
+  "name": "TubePremium",
+  "description": "YouTube Premium client with ad-free high quality video playback, background and lock screen audio playback, smart AI thumbnail creation and deep video thinking mode.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
