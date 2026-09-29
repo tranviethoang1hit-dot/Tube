@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.example.data.model.VideoItem
 import com.example.service.MediaPlaybackManager
+import com.example.service.PlaybackState
 import com.example.ui.theme.PremiumGold
 import com.example.ui.theme.YouTubeRed
 import kotlinx.coroutines.delay
@@ -36,6 +37,7 @@ fun VideoPlayerView(
     onCloseClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
+    val playbackState by MediaPlaybackManager.playbackState.collectAsState()
     val isPlaying by MediaPlaybackManager.isPlaying.collectAsState()
     val currentPositionMs by MediaPlaybackManager.currentPositionMs.collectAsState()
     val durationMs by MediaPlaybackManager.durationMs.collectAsState()
@@ -123,6 +125,53 @@ fun VideoPlayerView(
                 },
                 modifier = Modifier.fillMaxSize()
             )
+        }
+
+        // Loading Spinner during PREPARING
+        if (playbackState == PlaybackState.PREPARING) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(0x66000000)),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(color = YouTubeRed, modifier = Modifier.size(44.dp))
+            }
+        }
+
+        // Error State Screen with Retry Button
+        if (playbackState == PlaybackState.ERROR) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(0xCC000000)),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(
+                        imageVector = Icons.Default.CloudOff,
+                        contentDescription = null,
+                        tint = YouTubeRed,
+                        modifier = Modifier.size(40.dp)
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = "Đang đồng bộ luồng video HD...",
+                        color = Color.White,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Button(
+                        onClick = { MediaPlaybackManager.playVideo(video, forceRestart = true) },
+                        colors = ButtonDefaults.buttonColors(containerColor = YouTubeRed),
+                        shape = RoundedCornerShape(16.dp),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp)
+                    ) {
+                        Text("Thử lại kết nối", fontSize = 12.sp)
+                    }
+                }
+            }
         }
 
         // Controls Overlay

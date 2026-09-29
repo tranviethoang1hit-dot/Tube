@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.media.AudioAttributes
 import android.media.MediaPlayer
+import android.net.Uri
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
@@ -106,7 +107,6 @@ object MediaPlaybackManager {
 
     @Synchronized
     fun playVideo(video: VideoItem, startPosMs: Long = 0L, forceRestart: Boolean = false) {
-        // If already playing the same video and not forceRestarting, do not recreate
         if (!forceRestart && _currentVideo.value?.id == video.id &&
             (_playbackState.value == PlaybackState.PLAYING || _playbackState.value == PlaybackState.PAUSED)
         ) {
@@ -132,7 +132,18 @@ object MediaPlaybackManager {
                         .setUsage(AudioAttributes.USAGE_MEDIA)
                         .build()
                 )
-                setDataSource(video.videoUrl)
+
+                val uri = Uri.parse(video.videoUrl)
+                val ctx = appContext
+                if (ctx != null) {
+                    val headers = mapOf(
+                        "User-Agent" to "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36",
+                        "Accept" to "*/*"
+                    )
+                    setDataSource(ctx, uri, headers)
+                } else {
+                    setDataSource(video.videoUrl)
+                }
 
                 surfaceHolder?.let { holder ->
                     if (holder.surface?.isValid == true) {
@@ -172,11 +183,11 @@ object MediaPlaybackManager {
                 }
 
                 setOnErrorListener { _, what, extra ->
-                    Log.e(TAG, "MediaPlayer onError: what=$what, extra=$extra")
+                    Log.w(TAG, "MediaPlayer onError: what=$what, extra=$extra")
                     _playbackState.value = PlaybackState.ERROR
                     _isPlaying.value = false
                     handler.removeCallbacks(progressRunnable)
-                    true // Handled gracefully
+                    true // Handled gracefully to prevent Android system crash/dialog
                 }
 
                 prepareAsync()
